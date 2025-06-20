@@ -1,4 +1,5 @@
-﻿using PrototipoRelatorioRonda.Data.Interface;
+﻿using Microsoft.EntityFrameworkCore;
+using PrototipoRelatorioRonda.Data.Interface;
 using PrototipoRelatorioRonda.Models.Interface;
 using System.Linq.Expressions;
 
@@ -6,51 +7,51 @@ namespace PrototipoRelatorioRonda.Data.Repositories;
 
 public class BaseRepository<T> : IBaseRepository<T> where T : class, IAtivavel
 {
-    private readonly RelatorioRondaContext _context;
+    protected readonly RelatorioRondaContext _context;
 
     public BaseRepository(RelatorioRondaContext context)
     {
         _context = context;
     }
 
-    public T Add(T entity)
+    public async Task<T> AddAsync(T entity)
     {
         _context.Set<T>().Add(entity);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return entity;
     }
 
-    public void Delete(T entity)
+    public async Task DeleteAsync(T entity)
     {
         _context.Set<T>().Remove(entity);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
     }
 
-    public void Desativar(T entity)
+    public async Task DesativarAsync(T entity)
     {
         entity.Ativo = false;
         _context.Set<T>().Update(entity);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
     }
 
-    public IEnumerable<T> GetAll()
+    public async Task<IEnumerable<T>> GetAllAsync()
     {
-        return _context.Set<T>().ToList();
+        return await _context.Set<T>().ToListAsync();
     }
 
-    public T? GetBy(Expression<Func<T, bool>> predicado)
+    public async Task<T?> GetByAsync(Expression<Func<T, bool>> predicado)
     {
-        return _context.Set<T>().FirstOrDefault(predicado);
+        return await _context.Set<T>().FirstOrDefaultAsync(predicado);
     }
 
-    public T? GetById(int id)
+    public async Task<T?> GetByIdAsync(int id)
     {
-        return _context.Set<T>().Find(id);
+        return await _context.Set<T>().FindAsync(id);
     }
 
-    public void Update(T entity)
+    public async Task UpdateAsync(T entity)
     {
         _context.Set<T>().Update(entity);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
     }
 }

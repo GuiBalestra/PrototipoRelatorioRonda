@@ -1,15 +1,15 @@
-﻿using System.Linq.Expressions;
+﻿using PrototipoRelatorioRonda.Models.Interface;
+using System.Linq.Expressions;
 
-namespace PrototipoRelatorioRonda.Data.Interface
+namespace PrototipoRelatorioRonda.Data.Interface;
+
+public interface IBaseRepository<T> where T : class, IAtivavel
 {
-    public interface IBaseRepository<T> where T : class
-    {
-        IEnumerable<T> GetAll();
-        T? GetById(int id);
-        T Add(T entity);
-        void Update(T entity);
-        void Delete(T entity);
-        void Desativar(T entity);
-        T? GetBy(Expression<Func<T, bool>> predicado);
-    }
+    Task<T> AddAsync(T entity);
+    Task DeleteAsync(T entity);
+    Task DesativarAsync(T entity);
+    Task<IEnumerable<T>> GetAllAsync();
+    Task<T?> GetByAsync(Expression<Func<T, bool>> predicado);
+    Task<T?> GetByIdAsync(int id);
+    Task UpdateAsync(T entity);
 }

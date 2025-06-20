@@ -89,8 +89,8 @@ public class RelatorioRondaContext : DbContext
         });
     }
 
-    // Sobrescrever SaveChanges para automatizar CriadoEm
-    public override int SaveChanges()
+    // Sobrescrever SaveChangesAsync para automatizar CriadoEm
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var entries = ChangeTracker
             .Entries()
@@ -102,6 +102,6 @@ public class RelatorioRondaContext : DbContext
             ((BaseModel)entityEntry.Entity).CriadoEm = DateTime.Now;
         }
 
-        return base.SaveChanges();
+        return await base.SaveChangesAsync(cancellationToken);
     }
 }

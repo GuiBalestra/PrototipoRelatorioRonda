@@ -1,9 +1,7 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PrototipoRelatorioRonda.Data.Interface;
+﻿using Microsoft.AspNetCore.Mvc;
 using PrototipoRelatorioRonda.Models;
 using PrototipoRelatorioRonda.Models.DTO;
+using PrototipoRelatorioRonda.Services.Interface;
 
 namespace PrototipoRelatorioRonda.Controllers;
 
@@ -11,13 +9,11 @@ namespace PrototipoRelatorioRonda.Controllers;
 [ApiController]
 public class EmpresaController : ControllerBase
 {
-    private readonly IEmpresaRepository _empresaRepository;
-    private readonly IMapper _mapper;
+    private readonly IEmpresaService _empresaService;
 
-    public EmpresaController(IEmpresaRepository empresaRepository, IMapper mapper)
+    public EmpresaController(IEmpresaService empresaService)
     {
-        _empresaRepository = empresaRepository;
-        _mapper = mapper;
+        _empresaService = empresaService;
     }
 
     /// <summary>
@@ -31,15 +27,8 @@ public class EmpresaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<Empresa>>> GetAll()
     {
-        try
-        {
-            var empresas = await _empresaRepository.GetAllAsync();
-            return Ok(empresas);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        var empresas = await _empresaService.GetAllAsync();
+        return Ok(empresas);
     }
 
     /// <summary>
@@ -56,18 +45,11 @@ public class EmpresaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<Empresa>> GetById(int id)
     {
-        try
-        {
-            var empresa = await _empresaRepository.GetByIdAsync(id);
-            if (empresa is null) 
-                return NotFound(new { message = "Empresa não encontrada" });
+        var empresa = await _empresaService.GetByIdAsync(id);
+        if (empresa is null) 
+            return NotFound(new { message = "Empresa não encontrada" });
 
-            return Ok(empresa);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        return Ok(empresa);
     }
 
     /// <summary>
@@ -86,34 +68,13 @@ public class EmpresaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Post([FromBody] EmpresaDTO empresaDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            // Validação do modelo
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
-            }
+            return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+        }
 
-            // Verificar se o nome já existe
-            var nomeExiste = await _empresaRepository.NomeExisteAsync(empresaDto.Nome);
-            if (nomeExiste)
-            {
-                return Conflict(new { message = "Nome da empresa já está em uso" });
-            }
-
-            var empresa = _mapper.Map<Empresa>(empresaDto);
-            var empresaCriada = await _empresaRepository.AddAsync(empresa);
-            
-            return CreatedAtAction(nameof(GetById), new { id = empresaCriada.Id }, empresaCriada);
-        }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao salvar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        var empresaCriada = await _empresaService.CreateAsync(empresaDto);
+        return CreatedAtAction(nameof(GetById), new { id = empresaCriada.Id }, empresaCriada);
     }
 
     /// <summary>
@@ -135,40 +96,13 @@ public class EmpresaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Put(int id, [FromBody] EmpresaDTO empresaDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            // Validação do modelo
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
-            }
-
-            var empresa = await _empresaRepository.GetByIdAsync(id);
-            if (empresa is null) 
-                return NotFound(new { message = "Empresa não encontrada" });
-
-            // Verificar se o nome já existe (excluindo a empresa atual)
-            var nomeExiste = await _empresaRepository.NomeExisteAsync(empresaDto.Nome, id);
-            if (nomeExiste)
-            {
-                return Conflict(new { message = "Nome da empresa já está em uso" });
-            }
-
-            // Atualizar apenas os campos necessários
-            empresa.Nome = empresaDto.Nome;
-
-            await _empresaRepository.UpdateAsync(empresa);
-
-            return NoContent();
+            return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
         }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao atualizar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+
+        await _empresaService.UpdateAsync(id, empresaDto);
+        return NoContent();
     }
 
     /// <summary>
@@ -185,24 +119,8 @@ public class EmpresaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(int id)
     {
-        try
-        {
-            var empresa = await _empresaRepository.GetByIdAsync(id);
-            if (empresa is null) 
-                return NotFound(new { message = "Empresa não encontrada" });
-
-            await _empresaRepository.DeleteAsync(empresa);
-
-            return NoContent();
-        }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao deletar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        await _empresaService.DeleteAsync(id);
+        return NoContent();
     }
 
     /// <summary>
@@ -219,23 +137,7 @@ public class EmpresaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Desativar(int id)
     {
-        try
-        {
-            var empresa = await _empresaRepository.GetByIdAsync(id);
-            if (empresa is null) 
-                return NotFound(new { message = "Empresa não encontrada" });
-
-            await _empresaRepository.DesativarAsync(empresa);
-
-            return NoContent();
-        }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao desativar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        await _empresaService.DesativarAsync(id);
+        return NoContent();
     }
 }

@@ -11,7 +11,7 @@ public class VoltaRonda : BaseModel
     public string? Observacoes { get; set; } = string.Empty;
 
     #region Propriedades de navegação
-    public virtual RelatorioRonda RelatorioRonda { get; set; } = new();
+    public virtual RelatorioRonda? RelatorioRonda { get; set; }
     #endregion
 
     #endregion

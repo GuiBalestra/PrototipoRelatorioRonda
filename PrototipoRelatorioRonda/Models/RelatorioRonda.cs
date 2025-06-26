@@ -16,8 +16,8 @@ public class RelatorioRonda : BaseModel
     public string? TestemunhaChegada { get; set; } = string.Empty;
 
     #region Propriedades de navegação
-    public virtual Empresa Empresa { get; set; } = new();
-    public virtual Usuario Vigilante { get; set; } = new();
+    public virtual Empresa? Empresa { get; set; }
+    public virtual Usuario? Vigilante { get; set; }
     public virtual ICollection<VoltaRonda> Voltas { get; set; } = new List<VoltaRonda>();
     #endregion
 

@@ -13,7 +13,7 @@ public class Usuario : BaseModel
 
 
     #region Propriedades de navegação
-    public virtual Empresa Empresa { get; set; } = new();
+    public virtual Empresa? Empresa { get; set; }
     #endregion
 
     #endregion

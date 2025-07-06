@@ -32,11 +32,7 @@ public class ExceptionHandlingMiddleware
         var response = context.Response;
         response.ContentType = "application/json";
 
-        var errorResponse = new
-        {
-            message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.",
-            error = exception.Message
-        };
+        object errorResponse;
 
         switch (exception)
         {
@@ -63,6 +59,11 @@ public class ExceptionHandlingMiddleware
             default:
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 _logger.LogError(exception, "Erro não tratado: {Message}", exception.Message);
+                errorResponse = new
+                {
+                    message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.",
+                    error = exception.Message
+                };
                 break;
         }
 

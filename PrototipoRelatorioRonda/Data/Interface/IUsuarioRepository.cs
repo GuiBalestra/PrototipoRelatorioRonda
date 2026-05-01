@@ -9,4 +9,5 @@ public interface IUsuarioRepository : IBaseRepository<Usuario>
     Task<bool> EmpresaExisteAsync(int empresaId);
     Task<Usuario?> GetByIdWithEmpresaAsync(int id);
     Task<IEnumerable<Usuario>> GetAllWithEmpresaAsync();
+    Task<Usuario?> GetByEmailAsync(string email);
 }

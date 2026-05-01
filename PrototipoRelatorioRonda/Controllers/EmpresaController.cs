@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using PrototipoRelatorioRonda.Models;
 using PrototipoRelatorioRonda.Models.DTO;
 using PrototipoRelatorioRonda.Services.Interface;
 
 namespace PrototipoRelatorioRonda.Controllers;
 
+[Authorize]
 [Route("[controller]")]
 [ApiController]
 public class EmpresaController : ControllerBase

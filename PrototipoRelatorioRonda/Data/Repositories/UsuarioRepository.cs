@@ -47,4 +47,11 @@ public class UsuarioRepository : BaseRepository<Usuario>, IUsuarioRepository
             .Where(u => u.Ativo)
             .ToListAsync();
     }
+
+    public async Task<Usuario?> GetByEmailAsync(string email)
+    {
+        return await _context.Usuarios
+            .Include(u => u.Empresa)
+            .FirstOrDefaultAsync(u => u.Email == email && u.Ativo);
+    }
 }

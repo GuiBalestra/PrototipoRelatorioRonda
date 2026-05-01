@@ -1,9 +1,7 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PrototipoRelatorioRonda.Data.Interface;
 using PrototipoRelatorioRonda.Models;
 using PrototipoRelatorioRonda.Models.DTO;
+using PrototipoRelatorioRonda.Services.Interface;
 
 namespace PrototipoRelatorioRonda.Controllers;
 
@@ -11,13 +9,11 @@ namespace PrototipoRelatorioRonda.Controllers;
 [ApiController]
 public class VoltaRondaController : ControllerBase
 {
-    private readonly IVoltaRondaRepository _voltaRondaRepository;
-    private readonly IMapper _mapper;
+    private readonly IVoltaRondaService _voltaRondaService;
 
-    public VoltaRondaController(IVoltaRondaRepository voltaRondaRepository, IMapper mapper)
+    public VoltaRondaController(IVoltaRondaService voltaRondaService)
     {
-        _voltaRondaRepository = voltaRondaRepository;
-        _mapper = mapper;
+        _voltaRondaService = voltaRondaService;
     }
 
     /// <summary>
@@ -31,15 +27,8 @@ public class VoltaRondaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<VoltaRonda>>> GetAll()
     {
-        try
-        {
-            var voltas = await _voltaRondaRepository.GetAllWithRelatorioAsync();
-            return Ok(voltas);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        var voltas = await _voltaRondaService.GetAllWithRelatorioAsync();
+        return Ok(voltas);
     }
 
     /// <summary>
@@ -56,18 +45,11 @@ public class VoltaRondaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<VoltaRonda>> GetById(int id)
     {
-        try
-        {
-            var volta = await _voltaRondaRepository.GetByIdWithRelatorioAsync(id);
-            if (volta is null) 
-                return NotFound(new { message = "Volta de ronda não encontrada" });
+        var volta = await _voltaRondaService.GetByIdWithRelatorioAsync(id);
+        if (volta is null)
+            return NotFound(new { message = "Volta de ronda não encontrada" });
 
-            return Ok(volta);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        return Ok(volta);
     }
 
     /// <summary>
@@ -82,15 +64,8 @@ public class VoltaRondaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<VoltaRonda>>> GetByRelatorioRonda(int relatorioRondaId)
     {
-        try
-        {
-            var voltas = await _voltaRondaRepository.GetByRelatorioRondaAsync(relatorioRondaId);
-            return Ok(voltas);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        var voltas = await _voltaRondaService.GetByRelatorioRondaAsync(relatorioRondaId);
+        return Ok(voltas);
     }
 
     /// <summary>
@@ -111,44 +86,13 @@ public class VoltaRondaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Post([FromBody] VoltaRondaDTO voltaDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            // Validação do modelo
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
-            }
-
-            // Verificar se o relatório de ronda existe
-            var relatorioExiste = await _voltaRondaRepository.RelatorioRondaExisteAsync(voltaDto.RelatorioRondaId);
-            if (!relatorioExiste)
-            {
-                return NotFound(new { message = "Relatório de ronda não encontrado" });
-            }
-
-            // Verificar se o número da volta já existe para este relatório
-            var numeroVoltaExiste = await _voltaRondaRepository.NumeroVoltaExisteAsync(voltaDto.RelatorioRondaId, voltaDto.NumeroVolta);
-            if (numeroVoltaExiste)
-            {
-                return Conflict(new { message = "Número da volta já existe para este relatório" });
-            }
-
-            var volta = _mapper.Map<VoltaRonda>(voltaDto);
-            var voltaCriada = await _voltaRondaRepository.AddAsync(volta);
-            
-            // Buscar a volta criada com o relatório para retornar
-            var voltaCompleta = await _voltaRondaRepository.GetByIdWithRelatorioAsync(voltaCriada.Id);
-            
-            return CreatedAtAction(nameof(GetById), new { id = voltaCriada.Id }, voltaCompleta);
+            return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
         }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao salvar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+
+        var voltaCriada = await _voltaRondaService.CreateAsync(voltaDto);
+        return CreatedAtAction(nameof(GetById), new { id = voltaCriada.Id }, voltaCriada);
     }
 
     /// <summary>
@@ -170,52 +114,13 @@ public class VoltaRondaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Put(int id, [FromBody] VoltaRondaDTO voltaDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            // Validação do modelo
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
-            }
-
-            var volta = await _voltaRondaRepository.GetByIdWithRelatorioAsync(id);
-            if (volta is null) 
-                return NotFound(new { message = "Volta de ronda não encontrada" });
-
-            // Verificar se o relatório de ronda existe
-            var relatorioExiste = await _voltaRondaRepository.RelatorioRondaExisteAsync(voltaDto.RelatorioRondaId);
-            if (!relatorioExiste)
-            {
-                return NotFound(new { message = "Relatório de ronda não encontrado" });
-            }
-
-            // Verificar se o número da volta já existe para este relatório (excluindo a volta atual)
-            var numeroVoltaExiste = await _voltaRondaRepository.NumeroVoltaExisteAsync(voltaDto.RelatorioRondaId, voltaDto.NumeroVolta, id);
-            if (numeroVoltaExiste)
-            {
-                return Conflict(new { message = "Número da volta já existe para este relatório" });
-            }
-
-            // Atualizar apenas os campos necessários
-            volta.RelatorioRondaId = voltaDto.RelatorioRondaId;
-            volta.NumeroVolta = voltaDto.NumeroVolta;
-            volta.HoraSaida = voltaDto.HoraSaida;
-            volta.HoraChegada = voltaDto.HoraChegada;
-            volta.HoraDescanso = voltaDto.HoraDescanso;
-            volta.Observacoes = voltaDto.Observacoes;
-
-            await _voltaRondaRepository.UpdateAsync(volta);
-
-            return NoContent();
+            return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
         }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao atualizar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+
+        await _voltaRondaService.UpdateAsync(id, voltaDto);
+        return NoContent();
     }
 
     /// <summary>
@@ -232,24 +137,8 @@ public class VoltaRondaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(int id)
     {
-        try
-        {
-            var volta = await _voltaRondaRepository.GetByIdWithRelatorioAsync(id);
-            if (volta is null) 
-                return NotFound(new { message = "Volta de ronda não encontrada" });
-
-            await _voltaRondaRepository.DeleteAsync(volta);
-
-            return NoContent();
-        }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao deletar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        await _voltaRondaService.DeleteAsync(id);
+        return NoContent();
     }
 
     /// <summary>
@@ -266,23 +155,7 @@ public class VoltaRondaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Desativar(int id)
     {
-        try
-        {
-            var volta = await _voltaRondaRepository.GetByIdWithRelatorioAsync(id);
-            if (volta is null) 
-                return NotFound(new { message = "Volta de ronda não encontrada" });
-
-            await _voltaRondaRepository.DesativarAsync(volta);
-
-            return NoContent();
-        }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao desativar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        await _voltaRondaService.DesativarAsync(id);
+        return NoContent();
     }
-} 
+}

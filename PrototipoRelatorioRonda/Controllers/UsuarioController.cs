@@ -1,9 +1,7 @@
-﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PrototipoRelatorioRonda.Data.Interface;
 using PrototipoRelatorioRonda.Models;
 using PrototipoRelatorioRonda.Models.DTO;
+using PrototipoRelatorioRonda.Services.Interface;
 
 namespace PrototipoRelatorioRonda.Controllers;
 
@@ -11,13 +9,11 @@ namespace PrototipoRelatorioRonda.Controllers;
 [ApiController]
 public class UsuarioController : ControllerBase
 {
-    private readonly IUsuarioRepository _usuarioRepository;
-    private readonly IMapper _mapper;
+    private readonly IUsuarioService _usuarioService;
 
-    public UsuarioController(IUsuarioRepository usuarioRepository, IMapper mapper)
+    public UsuarioController(IUsuarioService usuarioService)
     {
-        _usuarioRepository = usuarioRepository;
-        _mapper = mapper;
+        _usuarioService = usuarioService;
     }
 
     /// <summary>
@@ -31,15 +27,8 @@ public class UsuarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<Usuario>>> GetAll()
     {
-        try
-        {
-            var usuarios = await _usuarioRepository.GetAllWithEmpresaAsync();
-            return Ok(usuarios);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        var usuarios = await _usuarioService.GetAllWithEmpresaAsync();
+        return Ok(usuarios);
     }
 
     /// <summary>
@@ -56,18 +45,11 @@ public class UsuarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<Usuario>> GetById(int id)
     {
-        try
-        {
-            var usuario = await _usuarioRepository.GetByIdWithEmpresaAsync(id);
-            if (usuario is null) 
-                return NotFound(new { message = "Usuário não encontrado" });
+        var usuario = await _usuarioService.GetByIdWithEmpresaAsync(id);
+        if (usuario is null)
+            return NotFound(new { message = "Usuário não encontrado" });
 
-            return Ok(usuario);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        return Ok(usuario);
     }
 
     /// <summary>
@@ -88,51 +70,13 @@ public class UsuarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Post([FromBody] UsuarioDTO usuarioDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            // Validação do modelo
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
-            }
-
-            // Verificar se a empresa existe
-            var empresaExiste = await _usuarioRepository.EmpresaExisteAsync(usuarioDto.EmpresaId);
-            if (!empresaExiste)
-            {
-                return NotFound(new { message = "Empresa não encontrada" });
-            }
-
-            // Verificar se o email já existe
-            var emailExiste = await _usuarioRepository.EmailExisteAsync(usuarioDto.Email);
-            if (emailExiste)
-            {
-                return Conflict(new { message = "Email já está em uso" });
-            }
-
-            // Verificar se o nome já existe
-            var nomeExiste = await _usuarioRepository.NomeExisteAsync(usuarioDto.Nome);
-            if (nomeExiste)
-            {
-                return Conflict(new { message = "Nome já está em uso" });
-            }
-
-            var usuario = _mapper.Map<Usuario>(usuarioDto);
-            var usuarioCriado = await _usuarioRepository.AddAsync(usuario);
-            
-            // Buscar o usuário criado com a empresa para retornar
-            var usuarioCompleto = await _usuarioRepository.GetByIdWithEmpresaAsync(usuarioCriado.Id);
-            
-            return CreatedAtAction(nameof(GetById), new { id = usuarioCriado.Id }, usuarioCompleto);
+            return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
         }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao salvar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+
+        var usuarioCriado = await _usuarioService.CreateAsync(usuarioDto);
+        return CreatedAtAction(nameof(GetById), new { id = usuarioCriado.Id }, usuarioCriado);
     }
 
     /// <summary>
@@ -154,66 +98,13 @@ public class UsuarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Put(int id, [FromBody] UsuarioDTO usuarioDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            // Validação do modelo
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
-            }
-
-            var usuario = await _usuarioRepository.GetByIdWithEmpresaAsync(id);
-            if (usuario is null) 
-                return NotFound(new { message = "Usuário não encontrado" });
-
-            // Verificar se a empresa existe
-            var empresaExiste = await _usuarioRepository.EmpresaExisteAsync(usuarioDto.EmpresaId);
-            if (!empresaExiste)
-            {
-                return NotFound(new { message = "Empresa não encontrada" });
-            }
-
-            // Verificar se o email já existe (excluindo o usuário atual)
-            var emailExiste = await _usuarioRepository.EmailExisteAsync(usuarioDto.Email, id);
-            if (emailExiste)
-            {
-                return Conflict(new { message = "Email já está em uso" });
-            }
-
-            // Verificar se o nome já existe (excluindo o usuário atual)
-            var nomeExiste = await _usuarioRepository.NomeExisteAsync(usuarioDto.Nome, id);
-            if (nomeExiste)
-            {
-                return Conflict(new { message = "Nome já está em uso" });
-            }
-
-            // Atualizar apenas os campos necessários
-            usuario.Nome = usuarioDto.Nome;
-            usuario.Email = usuarioDto.Email;
-            usuario.EmpresaId = usuarioDto.EmpresaId;
-            usuario.Funcao = usuarioDto.Funcao;
-
-            // Se uma nova senha foi fornecida, atualizar o hash
-            if (!string.IsNullOrEmpty(usuarioDto.Senha))
-            {
-                using var sha256 = System.Security.Cryptography.SHA256.Create();
-                var bytes = System.Text.Encoding.UTF8.GetBytes(usuarioDto.Senha);
-                var hash = sha256.ComputeHash(bytes);
-                usuario.HashSenha = Convert.ToBase64String(hash);
-            }
-
-            await _usuarioRepository.UpdateAsync(usuario);
-
-            return NoContent();
+            return BadRequest(new { message = "Dados inválidos", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
         }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao atualizar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+
+        await _usuarioService.UpdateAsync(id, usuarioDto);
+        return NoContent();
     }
 
     /// <summary>
@@ -230,24 +121,8 @@ public class UsuarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(int id)
     {
-        try
-        {
-            var usuario = await _usuarioRepository.GetByIdWithEmpresaAsync(id);
-            if (usuario is null) 
-                return NotFound(new { message = "Usuário não encontrado" });
-
-            await _usuarioRepository.DeleteAsync(usuario);
-
-            return NoContent();
-        }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao deletar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        await _usuarioService.DeleteAsync(id);
+        return NoContent();
     }
 
     /// <summary>
@@ -264,23 +139,7 @@ public class UsuarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Desativar(int id)
     {
-        try
-        {
-            var usuario = await _usuarioRepository.GetByIdWithEmpresaAsync(id);
-            if (usuario is null) 
-                return NotFound(new { message = "Usuário não encontrado" });
-
-            await _usuarioRepository.DesativarAsync(usuario);
-
-            return NoContent();
-        }
-        catch (DbUpdateException ex)
-        {
-            return StatusCode(500, new { message = "Erro ao desativar no banco de dados", error = ex.InnerException?.Message ?? ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Ocorreu um erro interno. Por favor, tente novamente mais tarde.", error = ex.Message });
-        }
+        await _usuarioService.DesativarAsync(id);
+        return NoContent();
     }
 }

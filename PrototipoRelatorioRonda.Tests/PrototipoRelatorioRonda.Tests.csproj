@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -9,11 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper" Version="16.1.1" />
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.7" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.0.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -26,7 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PrototipoRelatorioRonda\PrototipoRelatorioRonda.csproj" />
+    <ProjectReference Include="..\PrototipoRelatorioRonda.Domain\PrototipoRelatorioRonda.Domain.csproj" />
+    <ProjectReference Include="..\PrototipoRelatorioRonda.Application\PrototipoRelatorioRonda.Application.csproj" />
+    <ProjectReference Include="..\PrototipoRelatorioRonda.Infrastructure\PrototipoRelatorioRonda.Infrastructure.csproj" />
+    <ProjectReference Include="..\PrototipoRelatorioRonda.API\PrototipoRelatorioRonda.API.csproj" />
   </ItemGroup>
 
 </Project>

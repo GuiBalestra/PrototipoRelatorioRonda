@@ -8,26 +8,26 @@ using PrototipoRelatorioRonda.Application.DTOs;
 
 namespace PrototipoRelatorioRonda.Tests.Controllers;
 
-public class EmpresaControllerTests
+public class RelatorioRondaControllerTests
 {
-    private readonly Mock<IEmpresaService> _serviceMock;
-    private readonly EmpresaController _controller;
+    private readonly Mock<IRelatorioRondaService> _serviceMock;
+    private readonly RelatorioRondaController _controller;
 
-    public EmpresaControllerTests()
+    public RelatorioRondaControllerTests()
     {
-        _serviceMock = new Mock<IEmpresaService>();
-        _controller = new EmpresaController(_serviceMock.Object);
+        _serviceMock = new Mock<IRelatorioRondaService>();
+        _controller = new RelatorioRondaController(_serviceMock.Object);
     }
 
     [Fact]
     public async Task GetAll_ReturnsOk()
     {
-        var empresas = new List<Empresa>
+        var relatorios = new List<RelatorioRonda>
         {
-            new Empresa { Id = 1, Nome = "Empresa A" },
-            new Empresa { Id = 2, Nome = "Empresa B" }
+            new RelatorioRonda { Id = 1, Data = DateTime.Today },
+            new RelatorioRonda { Id = 2, Data = DateTime.Today }
         };
-        _serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(empresas);
+        _serviceMock.Setup(s => s.GetAllWithDetailsAsync()).ReturnsAsync(relatorios);
 
         var result = await _controller.GetAll();
 
@@ -37,8 +37,8 @@ public class EmpresaControllerTests
     [Fact]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var empresa = new Empresa { Id = 1, Nome = "Empresa A" };
-        _serviceMock.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(empresa);
+        var relatorio = new RelatorioRonda { Id = 1, Data = DateTime.Today };
+        _serviceMock.Setup(s => s.GetByIdWithDetailsAsync(1)).ReturnsAsync(relatorio);
 
         var result = await _controller.GetById(1);
 
@@ -48,7 +48,7 @@ public class EmpresaControllerTests
     [Fact]
     public async Task GetById_WhenNotExists_ReturnsNotFound()
     {
-        _serviceMock.Setup(s => s.GetByIdAsync(999)).ReturnsAsync((Empresa?)null);
+        _serviceMock.Setup(s => s.GetByIdWithDetailsAsync(999)).ReturnsAsync((RelatorioRonda?)null);
 
         var result = await _controller.GetById(999);
 
@@ -58,9 +58,9 @@ public class EmpresaControllerTests
     [Fact]
     public async Task Post_WhenValid_ReturnsCreated()
     {
-        var dto = new EmpresaDTO { Nome = "Nova Empresa" };
-        var empresa = new Empresa { Id = 1, Nome = "Nova Empresa" };
-        _serviceMock.Setup(s => s.CreateAsync(dto)).ReturnsAsync(empresa);
+        var dto = new RelatorioRondaDTO { Data = DateTime.Today, EmpresaId = 1, VigilanteId = 1 };
+        var relatorio = new RelatorioRonda { Id = 1, Data = DateTime.Today };
+        _serviceMock.Setup(s => s.CreateAsync(dto)).ReturnsAsync(relatorio);
 
         var result = await _controller.Post(dto);
 
@@ -70,7 +70,7 @@ public class EmpresaControllerTests
     [Fact]
     public async Task Put_WhenValid_ReturnsNoContent()
     {
-        var dto = new EmpresaDTO { Nome = "Empresa Atualizada" };
+        var dto = new RelatorioRondaDTO { Data = DateTime.Today, EmpresaId = 1, VigilanteId = 1 };
         _serviceMock.Setup(s => s.UpdateAsync(1, dto)).Returns(Task.CompletedTask);
 
         var result = await _controller.Put(1, dto);

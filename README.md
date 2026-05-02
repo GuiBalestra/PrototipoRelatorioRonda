@@ -8,18 +8,28 @@ O **PrototipoRelatorioRonda** é uma API RESTful desenvolvida em ASP.NET Core pa
 
 ## 🚀 Tecnologias Utilizadas
 
-- **ASP.NET Core 6.0** - Framework web
+- **ASP.NET Core 10.0** - Framework web
 - **Entity Framework Core** - ORM para acesso a dados
 - **AutoMapper** - Mapeamento entre entidades e DTOs
 - **SQL Server** - Banco de dados (LocalDB)
 - **Swagger/OpenAPI** - Documentação da API
 - **xUnit** - Testes unitários
+- **Moq** - Framework de mock para testes
+- **FluentAssertions** - Asserções fluentes para testes
 
 ## 🏗️ Arquitetura
 
-O projeto segue os padrões de design:
+O projeto segue **Clean Architecture** (Arquitetura Limpa) com separação em 4 camadas:
+
+- **Domain** - Entidades e interfaces de domínio (sem dependências)
+- **Application** - Lógica de aplicação, serviços, DTOs, perfis
+- **Infrastructure** - Acesso a dados, repositórios, DbContext
+- **API** - Controllers, middleware, configuração
+
+### Padrões de Design
 
 - **Repository Pattern** - Abstração do acesso a dados
+- **Unit of Work Pattern** - Gerenciamento de transações
 - **Service Layer Pattern** - Camada de lógica de negócio
 - **Dependency Injection** - Inversão de controle
 - **DTO Pattern** - Objetos de transferência de dados
@@ -29,25 +39,31 @@ O projeto segue os padrões de design:
 
 ```
 PrototipoRelatorioRonda/
-├── Controllers/              # API Controllers (100% refatorados)
-├── Models/                   # Entidades de domínio
-│   ├── DTO/                 # Data Transfer Objects
-│   ├── Interface/           # Interfaces de domínio
-│   └── Enums/              # Enumerações
-├── Data/                    # Camada de Dados
-│   ├── Interface/           # Interfaces de Repositório
-│   ├── Repositories/        # Implementações de Repositório
-│   └── RelatorioRondaContext.cs
-├── Services/                # Camada de Serviços (100% completa)
-│   ├── Interface/           # Interfaces de Serviço
-│   ├── EmpresaService.cs
-│   ├── UsuarioService.cs
-│   ├── RelatorioRondaService.cs
-│   └── VoltaRondaService.cs
-├── Profiles/                # Configurações do AutoMapper
-├── Middleware/              # Middlewares Customizados
-├── Exceptions/              # Exceções Personalizadas
-└── Migrations/              # Migrações do Entity Framework
+├── PrototipoRelatorioRonda.Domain/           # Camada de Domínio
+│   ├── Entities/                            # Entidades (Empresa, Usuario, RelatorioRonda, VoltaRonda)
+│   ├── Interfaces/                           # Interfaces de domínio (IBaseRepository, IAtivavel)
+│   ├── Enums/                               # Enumerações (Funcao)
+│   └── BaseModel.cs                        # Classe base para entidades
+│
+├── PrototipoRelatorioRonda.Application/      # Camada de Aplicação
+│   ├── Services/                            # Serviços de aplicação
+│   ├── Interfaces/                          # Interfaces de serviços e repositórios
+│   ├── DTOs/                               # Data Transfer Objects
+│   ├── Profiles/                           # Configurações do AutoMapper
+│   └── Exceptions/                         # Exceções de aplicação
+│
+├── PrototipoRelatorioRonda.Infrastructure/  # Camada de Infraestrutura
+│   ├── Data/                               # DbContext (RelatorioRondaContext, UnitOfWork)
+│   ├── Repositories/                       # Implementações de repositórios
+│   └── Migrations/                         # Migrações do Entity Framework
+│
+├── PrototipoRelatorioRonda.API/             # Camada de Apresentação (API)
+│   ├── Controllers/                         # API Controllers
+│   ├── Middleware/                         # Middlewares customizados
+│   ├── Program.cs                          # Configuração da aplicação
+│   └── appsettings.json                    # Configurações
+│
+└── PrototipoRelatorioRonda.Tests/           # Testes Unitários (33 testes)
 ```
 
 ## 📦 Entidades Principais
@@ -61,7 +77,7 @@ PrototipoRelatorioRonda/
 
 ### Pré-requisitos
 
-- .NET 6.0 SDK ou superior
+- .NET 10.0 SDK ou superior
 - SQL Server LocalDB (ou instância SQL Server configurada)
 
 ### Passos
@@ -79,13 +95,13 @@ PrototipoRelatorioRonda/
 
 3. **Aplique as migrações do banco de dados:**
    ```bash
-   cd PrototipoRelatorioRonda
+   cd PrototipoRelatorioRonda.Infrastructure
    dotnet ef database update
    ```
 
 4. **Execute o projeto:**
    ```bash
-   dotnet run
+   dotnet run --project PrototipoRelatorioRonda.API
    ```
 
 5. **Acesse a documentação da API:**
@@ -94,26 +110,30 @@ PrototipoRelatorioRonda/
 
 ## 🧪 Testes
 
-O projeto possui testes unitários utilizando xUnit:
+O projeto possui 53 testes unitários utilizando xUnit, Moq e FluentAssertions:
 
 ```bash
-cd PrototipoRelatorioRonda.Tests
 dotnet test
 ```
 
+**Cobertura:** 100% dos testes passando (53/53)
+
 ## 📊 Status do Projeto
 
+- ✅ **Clean Architecture**: 100% implementada (4 projetos)
 - ✅ **Repository Pattern**: 100% implementado
+- ✅ **Unit of Work**: 100% implementado
 - ✅ **Service Layer**: 100% implementado
 - ✅ **Controller Refactoring**: 100% concluído
 - ✅ **Exception Handling**: 100% implementado
 - ✅ **Dependency Injection**: 100% configurado
-- 🔄 **Testes Unitários**: Em desenvolvimento
 - ✅ **Autenticação JWT**: 100% implementado
+- ✅ **Testes Unitários**: 100% passando (53/53)
+- ✅ **AutoMapper**: 100% configurado (conflito de versão corrigido)
+- ✅ **Newtonsoft.Json**: Vulnerabilidade corrigida (v13.0.3)
 
 ## 📚 Documentação Adicional
 
-- [README_ESTRUTURA.md](PrototipoRelatorioRonda/README_ESTRUTURA.md) - Documentação detalhada da estrutura do projeto
 - [CORRECOES_REALIZADAS.md](CORRECOES_REALIZADAS.md) - Histórico de correções realizadas
 
 ## 🤝 Contribuição

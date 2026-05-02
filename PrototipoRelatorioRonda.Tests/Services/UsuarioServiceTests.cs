@@ -1,11 +1,11 @@
 using Moq;
 using Xunit;
 using FluentAssertions;
-using PrototipoRelatorioRonda.Services;
-using PrototipoRelatorioRonda.Data.Interface;
-using PrototipoRelatorioRonda.Models;
-using PrototipoRelatorioRonda.Models.DTO;
-using PrototipoRelatorioRonda.Models.Enums;
+using PrototipoRelatorioRonda.Application.Services;
+using PrototipoRelatorioRonda.Application.Interfaces;
+using PrototipoRelatorioRonda.Domain.Entities;
+using PrototipoRelatorioRonda.Application.DTOs;
+using PrototipoRelatorioRonda.Domain.Enums;
 using AutoMapper;
 
 namespace PrototipoRelatorioRonda.Tests.Services;

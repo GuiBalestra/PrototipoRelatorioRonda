@@ -24,6 +24,11 @@ public class AuthController : ControllerBase
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Realiza o login do usuário e retorna um token JWT.
+    /// </summary>
+    /// <param name="loginDto">Credenciais do usuário (email e senha)</param>
+    /// <returns>Token JWT para autenticação</returns>
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginDTO loginDto)

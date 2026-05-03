@@ -35,6 +35,43 @@ O projeto segue **Clean Architecture** (Arquitetura Limpa) com separação em 4 
 - **DTO Pattern** - Objetos de transferência de dados
 - **Soft Delete Pattern** - Exclusão lógica (Ativo/Inativo)
 
+### 🔑 Seed de Dados (Admin)
+
+Ao iniciar a aplicação, o banco é automaticamente populado com:
+
+- **Empresa:** GuiBalestra
+- **Usuário Admin:** Admin (email: gb-ol@hotmail.com, senha: 123456, função: Administrador)
+
+O seed é idempotente — só cria os registros se não existirem.
+
+### 📋 Sequência de Cadastros
+
+Para usar a API, siga esta ordem (devido aos relacionamentos):
+
+1. **Empresa** — `POST /empresas`
+   - Campos: `nome` (obrigatório)
+   - Sem dependências
+
+2. **Usuário** — `POST /usuarios`
+   - Campos: `nome`, `email`, `senha`, `funcao`, `empresaId`
+   - Depende de: Empresa criada anteriormente
+
+3. **Relatório de Ronda** — `POST /relatoriosronda`
+   - Campos: `data`, `kmSaida`, `kmChegada`, `testemunhaSaida`, `testemunhaChegada`, `empresaId`, `vigilanteId`
+   - Depende de: Empresa e Usuário (Vigilante)
+
+4. **Volta de Ronda** — `POST /voltasronda`
+   - Campos: `numeroVolta`, `horaSaida`, `horaChegada`, `horaDescanso`, `observacoes`, `relatorioRondaId`
+   - Depende de: Relatório de Ronda criado anteriormente
+
+### 🔐 Autenticação
+
+1. Faça login com o usuário admin: `POST /auth/login`
+   ```json
+   { "email": "gb-ol@hotmail.com", "senha": "123456" }
+   ```
+2. Use o token JWT retornado no header `Authorization: Bearer <token>` para acessar os endpoints protegidos.
+
 ### Estrutura de Pastas
 
 ```

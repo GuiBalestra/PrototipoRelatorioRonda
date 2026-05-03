@@ -15,7 +15,11 @@ var connectionString = builder.Configuration.GetConnectionString("RelatorioRonda
 
 builder.Services.AddDbContext<RelatorioRondaContext>(opts =>
 {
-    opts.UseLazyLoadingProxies().UseSqlServer(connectionString);
+    opts.UseLazyLoadingProxies().UseSqlServer(connectionString, sqlOpts =>
+        sqlOpts.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null));
 });
 
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
@@ -65,6 +69,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Seed do banco de dados
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<RelatorioRondaContext>();
+    await DatabaseSeed.SeedAsync(context);
+}
 
 if (app.Environment.IsDevelopment())
 {
